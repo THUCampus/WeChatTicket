@@ -37,7 +37,7 @@ class Activity(models.Model):
 class Ticket(models.Model):
     student_id = models.CharField(max_length=32, db_index=True)
     unique_id = models.CharField(max_length=64, db_index=True, unique=True)
-    activity = models.ForeignKey(Activity)
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
     status = models.IntegerField()
 
     STATUS_CANCELLED = 0
