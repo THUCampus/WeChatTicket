@@ -9,7 +9,7 @@ __author__ = "Epsirom"
 
 urlpatterns = [
     url(r'^login/?$',adminLogin.as_view()),
-    # url(r'^logout/?$',adminLogout.as_view()),
+    url(r'^logout/?$',adminLogout.as_view()),
     # url(r'^activity/list/?$',activityList.as_view()),
     # url(r'^activity/delete/?$',activityDelete.as_view()),
     # url(r'^activity/create/?$',activityCreate.as_view()),
