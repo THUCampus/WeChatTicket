@@ -2,8 +2,11 @@ from django.shortcuts import render
 from django.contrib import auth
 from codex.baseerror import *
 from codex.baseview import *
+<<<<<<< HEAD
 from wechat.models import Activity
 import datetime
+=======
+>>>>>>> 88b2dfc7bdb6b1db3b19fc1322b34d4b4405a801
 
 # Create your views here.
 
@@ -25,13 +28,18 @@ class adminLogin(APIView):
         except:
             raise ValidateError("Fail to login!")
 
+<<<<<<< HEAD
 #登出
 class adminLogout(APIView):
     #登出
+=======
+class adminLogout(APIView):
+>>>>>>> 88b2dfc7bdb6b1db3b19fc1322b34d4b4405a801
     def post(self):
         try:
             auth.logout(self.request)
         except:
+<<<<<<< HEAD
             raise ValidateError("Fail to logout!")
 
 #活动列表
@@ -58,3 +66,6 @@ class activityList(APIView):
             return activity_List
         else:
             raise ValidateError('Please login!')
+=======
+            raise ValidateError("Fail to logout!")
+>>>>>>> 88b2dfc7bdb6b1db3b19fc1322b34d4b4405a801
