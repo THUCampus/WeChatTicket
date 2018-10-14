@@ -114,7 +114,7 @@ class WeChatLib(object):
 
     logger = logging.getLogger('wechatlib')
     access_token = ''
-    access_token_expire = datetime.datetime.fromtimestamp(0)
+    access_token_expire = datetime.datetime.fromtimestamp(123456789)
     token = WECHAT_TOKEN
     appid = WECHAT_APPID
     secret = WECHAT_SECRET
