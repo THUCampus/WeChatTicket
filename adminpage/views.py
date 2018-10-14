@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.contrib import auth
 from codex.baseerror import *
 from codex.baseview import *
-from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -22,3 +21,10 @@ class adminLogin(APIView):
             auth.login(self.request, user)
         except:
             raise ValidateError("Fail to login!")
+
+class adminLogout(APIView):
+    def post(self):
+        try:
+            auth.logout(self.request)
+        except:
+            raise ValidateError("Fail to logout!")
