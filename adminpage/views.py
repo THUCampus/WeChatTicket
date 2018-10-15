@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib import auth
 from codex.baseerror import *
 from codex.baseview import *
-from wechat.models import Activity
+from wechat.models import Activity, Ticket
 import datetime
 from WeChatTicket.settings import SITE_DOMAIN
 
@@ -132,5 +132,69 @@ class imageUpload(APIView):
                 return SITE_DOMAIN + '/img/activityImage/' + image.name
             except:
                 raise ValidateError("Fail to upload image!")
+        else:
+            raise ValidateError('Please login!')
+
+#活动详情
+class activityDetail(APIView):
+    #获取活动详情
+    def get(self):
+        if self.request.user.is_authenticated():
+            self.check_input('id')
+            id = self.input['id']
+            try:
+                activity = Activity.objects.get(id=id)
+                ticket_List = Ticket.objects.filter(activity_id=activity.id)
+                bookedTickets = 0
+                usedTickets = 0
+                for t in ticket_List:
+                    if t.status == Ticket.STATUS_VALID:
+                        bookedTickets += 1
+                    elif t.status == Ticket.STATUS_USED:
+                        usedTickets += 1
+                
+                detail = {}
+                detail['name'] = activity.name
+                detail['key'] = activity.key
+                detail['description'] = activity.description
+                detail['startTime'] = activity.start_time.timestamp()
+                detail['endTime'] = activity.end_time.timestamp()
+                detail['place'] = activity.place
+                detail['bookStart'] = activity.book_start.timestamp()
+                detail['bookEnd'] = activity.book_end.timestamp()
+                detail['totalTickets'] = activity.total_tickets
+                detail['picUrl'] = activity.pic_url
+                detail['bookedTickets'] = bookedTickets
+                detail['usedTickets'] = usedTickets
+                detail['currentTime'] = datetime.datetime.now().timestamp()
+                detail['status'] = activity.status
+                return detail
+            except:
+                raise ValidateError("Fail to get activity details!")
+        else:
+            raise ValidateError('Please login!')
+
+    # #修改活动详情
+    def post(self):
+        if self.request.user.is_authenticated():
+            self.check_input('id', 'name', 'place', 'description', 'picUrl', 'startTime', 'endTime', 'bookStart', 'bookEnd', 'totalTickets', 'status')
+            id = self.input['id']
+            try:
+                activity = Activity.objects.get(id=id)
+                activity.id = self.input['id']
+                activity.name = self.input['name']
+                activity.place = self.input['place']
+                activity.description = self.input['description']
+                activity.pic_url = self.input['picUrl']
+                activity.start_time = self.input['startTime']
+                activity.end_time = self.input['endTime']
+                activity.book_start = self.input['bookStart']
+                activity.book_end = self.input['bookEnd']
+                activity.total_tickets = self.input['totalTickets']
+                activity.status = self.input['status']
+                
+                activity.save()
+            except:
+                raise ValidateError("Fail to change activity details!")
         else:
             raise ValidateError('Please login!')
