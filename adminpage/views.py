@@ -4,6 +4,7 @@ from codex.baseerror import *
 from codex.baseview import *
 from wechat.models import Activity
 import datetime
+from WeChatTicket.settings import SITE_DOMAIN
 
 # Create your views here.
 
@@ -100,16 +101,36 @@ class activityCreate(APIView):
         else:
             raise ValidateError('Please login!')
 
-# #删除活动
+#删除活动
 class activityDelete(APIView):
     def post(self):
-        self.check_input('id')
-        id = self.input['id']
-        activity = Activity.objects.filter(id__exact = id)
-        if activity:
-            try:
-                activity.delete()
-            except:
-                raise ValidateError("System error!")
+        if self.request.user.is_authenticated():
+            self.check_input('id')
+            id = self.input['id']
+            activity = Activity.objects.filter(id__exact = id)
+            if activity:
+                try:
+                    activity.delete()
+                except:
+                    raise ValidateError("System error!")
+            else:
+                raise ValidateError("ID does not exit!")
         else:
-            raise ValidateError("ID does not exit!")
+            raise ValidateError('Please login!')
+
+#上传图像并保存到服务器
+class imageUpload(APIView):
+    def post(self):
+        if self.request.user.is_authenticated():
+            self.check_input('image')
+            image = self.input['image'][0]
+            try:
+                f = open("static/img/activityImage/" + image.name, "wb")
+                for index in image.chunks():
+                    f.write(index)
+                f.close()
+                return SITE_DOMAIN + '/img/activityImage/' + image.name
+            except:
+                raise ValidateError("Fail to upload image!")
+        else:
+            raise ValidateError('Please login!')
