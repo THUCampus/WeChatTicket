@@ -5,7 +5,7 @@ from codex.baseerror import LogicError
 
 class User(models.Model):
     open_id = models.CharField(max_length=64, unique=True, db_index=True)
-    student_id = models.CharField(max_length=32, unique=True, db_index=True)
+    student_id = models.CharField(max_length=32, unique=False, db_index=True)
 
     @classmethod
     def get_by_openid(cls, openid):
@@ -32,6 +32,13 @@ class Activity(models.Model):
     STATUS_DELETED = -1
     STATUS_SAVED = 0
     STATUS_PUBLISHED = 1
+
+    @classmethod
+    def get_by_id(cls, id):
+        try:
+            return cls.objects.get(id=id)
+        except cls.DoesNotExist:
+            raise LogicError('Activity not found')
 
 
 class Ticket(models.Model):
