@@ -1,10 +1,14 @@
 from django.shortcuts import render
 from django.contrib import auth
+from django.utils import timezone
 from codex.baseerror import *
 from codex.baseview import *
 from wechat.models import Activity, Ticket
 import datetime
 from WeChatTicket.settings import SITE_DOMAIN
+from wechat.views import *
+from wechat.wrapper import *
+
 
 # Create your views here.
 
@@ -196,5 +200,108 @@ class activityDetail(APIView):
                 activity.save()
             except:
                 raise ValidateError("Fail to change activity details!")
+        else:
+            raise ValidateError('Please login!')
+
+#微信抢票菜单调整
+class activityMenu(APIView):
+    #获取当前微信抢票菜单
+    def get(self):
+        if self.request.user.is_authenticated():
+            try:
+                wechat_menu = CustomWeChatView.lib.get_wechat_menu()
+                current_btns = list()
+                for b in wechat_menu:
+                    if b['name'] == '抢票':
+                        current_btns += b.get('sub_button', list())
+                activity_ids = list()
+                for b in current_btns:
+                    if 'key' in b:
+                        activity_id = b['key']
+                        if activity_id.startswith(CustomWeChatView.event_keys['book_header']):
+                            activity_id = activity_id[len(CustomWeChatView.event_keys['book_header']):]
+                        if activity_id and activity_id.isdigit():
+                            activity_ids.append(int(activity_id))
+                acts = Activity.objects.filter(
+                    id__in=activity_ids, status=Activity.STATUS_PUBLISHED, book_end__gt=timezone.now()
+                ).order_by('book_end')[: 5]
+
+                activities = []
+                index = 0
+                for a in acts:
+                    index += 1
+                    activities.append({
+                        'id':a.id,
+                        'name':a.name,
+                        'menuIndex':index
+                    })
+
+                allActs = Activity.objects.all()
+                for a in allActs:
+                    if a not in acts:
+                        if a.book_end.timestamp() > datetime.datetime.now().timestamp() and a.status == Activity.STATUS_PUBLISHED:
+                            activities.append({
+                                'id':a.id,
+                                'name':a.name,
+                                'menuIndex':0
+                            })
+                return activities
+            except:
+                raise ValidateError('Fail to get WeChat Menu!')
+        else:
+            raise ValidateError('Please login!')
+
+    #修改微信抢票菜单
+    def post(self):
+        if self.request.user.is_authenticated():
+            try:
+                acts = []
+                for id in self.input:
+                    act = Activity.objects.get(id=id)
+                    acts.append(act)
+                CustomWeChatView.update_menu(acts)
+            except:
+                raise ValidateError('Fail to change WeChat Menu!')
+        else:
+            raise ValidateError('Please login!')
+
+#检票
+class activityCheckin(APIView):
+    #检票
+    def post(self):
+        if self.request.user.is_authenticated():
+            try:
+                try:
+                    self.input['studentId']
+                except:
+                    self.check_input('actId', 'ticket')
+                    actId = self.input['actId']
+                    ticket = self.input['ticket']
+                    if Ticket.objects.filter(activity_id=actId, unique_id=ticket):
+                        T = Ticket.objects.get(activity_id=actId, unique_id=ticket)
+                        if not T.status == Ticket.STATUS_CANCELLED:
+                            info = {}
+                            info['ticket'] = T.unique_id
+                            info['studentId'] = T.student_id
+                            return info
+
+                try:
+                    self.input['ticket']
+                except:
+                    self.check_input('actId', 'studentId')
+                    actId = self.input['actId']
+                    studentId = self.input['studentId']
+                    if Ticket.objects.filter(activity_id=actId, student_id=studentId):
+                        T = Ticket.objects.get(activity_id=actId, student_id=studentId)
+                        if not T.status == Ticket.STATUS_CANCELLED:
+                            info = {}
+                            info['ticket'] = T.unique_id
+                            info['studentId'] = T.student_id
+                            return info
+
+                raise ValidateError('Fail to Checkin!')
+                
+            except:
+                raise ValidateError('Fail to Checkin!')
         else:
             raise ValidateError('Please login!')
