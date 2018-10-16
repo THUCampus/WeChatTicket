@@ -15,6 +15,6 @@ urlpatterns = [
     url(r'^activity/delete/?$',activityDelete.as_view()),
     url(r'^image/upload/?$',imageUpload.as_view()),
     url(r'^activity/detail/?$',activityDetail.as_view()),
-    # url(r'^activity/menu/?$',activityMenu.as_view()),
-    # url(r'^activity/checkin/?$',activityCheckin.as_view()),
+    url(r'^activity/menu/?$',activityMenu.as_view()),
+    url(r'^activity/checkin/?$',activityCheckin.as_view()),
 ]
