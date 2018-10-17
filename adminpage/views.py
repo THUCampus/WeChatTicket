@@ -277,6 +277,7 @@ class activityCheckin(APIView):
                     self.check_input('actId', 'ticket')
                     actId = self.input['actId']
                     ticket = self.input['ticket']
+                    
                     if Ticket.objects.filter(activity_id=actId, unique_id=ticket):
                         T = Ticket.objects.get(activity_id=actId, unique_id=ticket)
                         if not T.status == Ticket.STATUS_CANCELLED:
