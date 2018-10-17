@@ -277,13 +277,19 @@ class activityCheckin(APIView):
                     self.check_input('actId', 'ticket')
                     actId = self.input['actId']
                     ticket = self.input['ticket']
+                    try:
+                        activity = Activity.objects.get(id=actId)
+                    except:
+                        raise ValidateError("Activity for this ID does not exit!")
                     
-                    if Ticket.objects.filter(activity_id=actId, unique_id=ticket):
-                        T = Ticket.objects.get(activity_id=actId, unique_id=ticket)
-                        if not T.status == Ticket.STATUS_CANCELLED:
+                    if Ticket.objects.filter(activity=activity, unique_id=ticket):
+                        T = Ticket.objects.get(activity=activity, unique_id=ticket)
+                        if T.status == Ticket.STATUS_VALID:
                             info = {}
                             info['ticket'] = T.unique_id
                             info['studentId'] = T.student_id
+                            T.status = Ticket.STATUS_USED
+                            T.save()
                             return info
 
                 try:
@@ -292,12 +298,14 @@ class activityCheckin(APIView):
                     self.check_input('actId', 'studentId')
                     actId = self.input['actId']
                     studentId = self.input['studentId']
-                    if Ticket.objects.filter(activity_id=actId, student_id=studentId):
-                        T = Ticket.objects.get(activity_id=actId, student_id=studentId)
-                        if not T.status == Ticket.STATUS_CANCELLED:
+                    if Ticket.objects.filter(activity=activity, student_id=studentId):
+                        T = Ticket.objects.get(activity=activity, student_id=studentId)
+                        if T.status == Ticket.STATUS_VALID:
                             info = {}
                             info['ticket'] = T.unique_id
                             info['studentId'] = T.student_id
+                            T.status = Ticket.STATUS_USED
+                            T.save()
                             return info
 
                 raise ValidateError('Fail to Checkin!')
