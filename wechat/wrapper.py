@@ -64,17 +64,21 @@ class WeChatHandler(object):
     def get_message(self, name, **data):
         if name.endswith('.html'):
             name = name[: -5]
-        result = get_template('messages/' + name + '.html').render(dict(
+        return get_template('messages/' + name + '.html').render(dict(
             handler=self, user=self.user, **data
         ))
-        self.logger.warn(repr(result))
-        return result
+        # self.logger.warn(repr(result))
+        # return result
 
     def get_activity(self,id):
         activity = Activity.objects.filter(id=int(id))
         if not activity:
             return activity
         return activity[0]
+    
+    def get_activities(self):
+        activities = Activity.objects.filter(status=Activity.STATUS_PUBLISHED)
+        return activities
 
     def is_msg_type(self, check_type):
         return self.input['MsgType'] == check_type

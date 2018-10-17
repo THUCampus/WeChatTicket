@@ -77,6 +77,7 @@ class BookActivityHandler(WeChatHandler):
         return False
 
     def handle(self):
+        
         act_id = self.input['EventKey'][len(self.view.event_keys['book_header']):]
         activity = self.get_activity(act_id)
         if not activity:
@@ -87,3 +88,22 @@ class BookActivityHandler(WeChatHandler):
             'Url': self.url_book(act_id),
             'PicUrl': activity.pic_url,
         })
+
+
+class BookWhatHandler(WeChatHandler):
+    def check(self):
+        return self.is_event_click(self.view.event_keys['book_what'])
+
+    def handle(self):
+        activities = self.get_activities()
+        if not activities:
+            return self.reply_text('对不起，现在没有正在抢票的活动')
+        articles = []
+        for activity in activities:
+            articles.append({
+                'Title': activity.name,
+                'Description': activity.description,
+                'Url': self.url_book(activity.id),
+                'PicUrl': activity.pic_url,
+            })
+        return self.reply_news(articles)
