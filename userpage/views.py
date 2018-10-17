@@ -41,7 +41,10 @@ class UserActivityDetail(APIView):
     def get(self):
         self.check_input('id')
         try:
-            activity = Activity.objects.get(id = self.input['id'])
+            activity_list = Activity.objects.filter(id = self.input['id'])
+            if not activity_list:
+                raise ValidateError('Not found')
+            activity = activity_list[0]
             if(activity.status != Activity.STATUS_PUBLISHED):
                 raise ValidateError("活动已截止")
             detail = {}

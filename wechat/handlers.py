@@ -32,7 +32,7 @@ class HelpOrSubscribeHandler(WeChatHandler):
 
     def handle(self):
         return self.reply_single_news({
-            'Title': self.get_message('help_title'),
+            'Title': 'wtf',
             'Description': self.get_message('help_description'),
             'Url': self.url_help(),
         })
@@ -65,3 +65,25 @@ class BookEmptyHandler(WeChatHandler):
 
     def handle(self):
         return self.reply_text(self.get_message('book_empty'))
+
+
+class BookActivityHandler(WeChatHandler):
+
+    def check(self):
+        if self.is_event('CLICK'):
+            event_key = self.view.event_keys['book_header']
+            event_key += self.input['EventKey'][len(event_key):]
+            return self.is_event_click(event_key)
+        return False
+
+    def handle(self):
+        act_id = self.input['EventKey'][len(self.view.event_keys['book_header']):]
+        activity = self.get_activity(act_id)
+        if not activity:
+            return self.reply_text('对不起，服务器现在有点忙，暂时不能给您答复 T T')
+        return self.reply_single_news({
+            'Title': activity.name,
+            'Description': activity.description,
+            'Url': self.url_book(act_id),
+            'PicUrl': activity.pic_url,
+        })
