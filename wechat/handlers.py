@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 from wechat.wrapper import WeChatHandler
-
+from wechat.models import User,Activity,Ticket
 
 __author__ = "Epsirom"
 
@@ -77,11 +77,25 @@ class BookActivityHandler(WeChatHandler):
         return False
 
     def handle(self):
-        
+        if not self.user.student_id:
+            return self.reply_text('对不起，您尚未绑定，无法抢票')
+
         act_id = self.input['EventKey'][len(self.view.event_keys['book_header']):]
         activity = self.get_activity(act_id)
         if not activity:
             return self.reply_text('对不起，服务器现在有点忙，暂时不能给您答复 T T')
+        if activity.remain_tickets > 0:
+            ticket = Ticket.objects.filter(student_id = self.user.student_id, activity = activity)
+            if not ticket:
+                unique_id = self.user.student_id + act_id
+                Ticket.objects.create(student_id = self.user.student_id, uniqueId = unique_id,
+                activity = activity, status = Ticket.STATUS_VALID, activityName = activity.name,
+                place = activity.place, activityKey = activity.key,startTime = activity.start_time.timestamp(),
+                endTime = activity.end_time.timestamp(),currentTime = datetime.datetime.now().timestamp())
+                activity.remain_tickets -= 1
+                return self.reply_text('抢票成功')
+            else:
+                return self.reply_text('对不起，您已经购买过本场活动的票')
         return self.reply_single_news({
             'Title': activity.name,
             'Description': activity.description,
@@ -105,5 +119,24 @@ class BookWhatHandler(WeChatHandler):
                 'Description': activity.description,
                 'Url': self.url_book(activity.id),
                 'PicUrl': activity.pic_url,
+            })
+        return self.reply_news(articles)
+
+
+class GetTicketHandler(WeChatHandler):
+    def check(self):
+        return self.is_text('查票') or self.is_event_click(self.view.event_keys['get_ticket'])
+
+    def handle(self):
+        tickets = self.get_tickets()
+        if not tickets:
+            return self.reply_text('对不起，当前没有已经购买的票')
+        articles = []
+        for ticket in tickets:
+            articles.append({
+                'Title':ticket.activity.name,
+                'Description':ticket.activity.description,
+                'Url':self.url_ticket(ticket.unique_id),
+                'PicUrl':ticket.activity.pic_url,
             })
         return self.reply_news(articles)
