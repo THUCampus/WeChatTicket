@@ -212,30 +212,35 @@ class act_Menu_Test(TestCase):
 class activity_checkin_Test(TestCase):
     #初始化
     def ini(self):
-        Ticket.objects.create(student_id = '1', unique_id='1', activity_id='act', status=Ticket.STATUS_CANCELLED)
-        Ticket.objects.create(student_id = '2', unique_id='2', activity_id='act', status=Ticket.STATUS_USED)
-        Ticket.objects.create(student_id = '3', unique_id='3', activity_id='act', status=Ticket.STATUS_VALID)
+        act = Activity.objects.create(id=1, name='act_published', key='key', place='place',
+                                description='description', start_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), pic_url="url",
+                                end_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)), book_start=timezone.now(), book_end=timezone.make_aware(datetime.datetime(2018, 10, 27, 18, 0, 0, 0)),
+                                total_tickets=1000, status=Activity.STATUS_PUBLISHED, remain_tickets=1000)
+        Ticket.objects.create(student_id = '1', unique_id='1', activity= act, status=Ticket.STATUS_CANCELLED)
+        Ticket.objects.create(student_id = '2', unique_id='2', activity= act, status=Ticket.STATUS_USED)
+        Ticket.objects.create(student_id = '3', unique_id='3', activity= act, status=Ticket.STATUS_VALID)
 
     #正常检票
     def checkin_vaild1(self):
         C = activityCheckin()
-        C.input = {'actId':'act', 'student_id':3}
+        C.input = {'actId':1, 'student_id':3}
         info = C.post()
         self.assertEqual(info['ticket'], 3)
 
     #正常检票
     def checkin_vaild2(self):
         C = activityCheckin()
-        C.input = {'actId':'act', 'unique_id':2}
+        C.input = {'actId':1, 'unique_id':2}
         info = C.post()
         self.assertEqual(info['studentId'], 2)
 
     #非正常检票
     def checkin_invaild(self):
         C = activityCheckin()
-        C.input = {'actId':'act', 'unique_id':1}
+        C.input = {'actId':1, 'unique_id':1}
         self.assertRaises(ValidateError, C.post)
 
     #回退
     def clear(self):
         Ticket.objects.all().delete()
+        Activity.objects.all().delete()
