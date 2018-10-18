@@ -36,8 +36,6 @@ class WeChatHandler(object):
     def check(self):
         raise NotImplementedError('You should implement check() in sub-class of WeChatHandler')
 
-    def create_ticket(self,act_id):
-    
     def handle(self):
         raise NotImplementedError('You should implement handle() in sub-class of WeChatHandler')
 
@@ -72,21 +70,15 @@ class WeChatHandler(object):
         #self.logger.warn(repr(result))
         #return result
 
-    def get_activity(self,act_id):
-        activitys = Activity.objects.filter(id=int(act_id))
-        if not activitys:
-            return activitys
-        return activitys[0]
+    def get_activity(self,id):
+        activity = Activity.objects.filter(id=int(id))
+        if not activity:
+            return activity
+        return activity[0]
 
     def get_activities(self):
         activities = Activity.objects.filter(status = Activity.STATUS_PUBLISHED)
         return activities
-
-    def get_ticket_by_act(self,act_id):
-        tickets = Ticket.objects.filter(id=int(act_id))
-        if not tickets:
-            return tickets
-        return tickets[0]
 
     def get_tickets(self):
         tickets = Ticket.objects.filter(student_id = self.user.student_id)
@@ -120,6 +112,7 @@ class WeChatHandler(object):
         self.logger.warn('openid')
         self.logger.warn('ticket')
         return settings.get_url('u/ticket',{'ticket':ticket,'id':'11','openid': self.user.open_id})
+
 
 class WeChatEmptyHandler(WeChatHandler):
 

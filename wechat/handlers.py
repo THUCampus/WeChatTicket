@@ -84,8 +84,18 @@ class BookActivityHandler(WeChatHandler):
         activity = self.get_activity(act_id)
         if not activity:
             return self.reply_text('对不起，服务器现在有点忙，暂时不能给您答复 T T')
-        #check if the student has book a ticket:
-        
+        if activity.remain_tickets > 0:
+            ticket = Ticket.objects.filter(student_id = self.user.student_id, activity = activity)
+            if not ticket:
+                unique_id = self.user.student_id + act_id
+                Ticket.objects.create(student_id = self.user.student_id, uniqueId = unique_id,
+                activity = activity, status = Ticket.STATUS_VALID, activityName = activity.name,
+                place = activity.place, activityKey = activity.key,startTime = activity.start_time.timestamp(),
+                endTime = activity.end_time.timestamp(),currentTime = datetime.datetime.now().timestamp())
+                activity.remain_tickets -= 1
+                return self.reply_text('抢票成功')
+            else:
+                return self.reply_text('对不起，您已经购买过本场活动的票')
         return self.reply_single_news({
             'Title': activity.name,
             'Description': activity.description,
