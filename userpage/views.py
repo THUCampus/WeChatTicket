@@ -68,12 +68,14 @@ class TicketDetail(APIView):
 
     def get(self):
         self.check_input('openid','ticket')
-        user = User.objects.filter(openid=self.input['openid'])
+        user = User.objects.filter(open_id=self.input['openid'])
         if not user:
             raise LogicError('User not found')
-        ticket = Ticket.objects.filter(student_id=user.student_id,unique_id=self.input['ticket'])
-        if not ticket:
-            raise LogicError('Ticket not found')
+        ticketlist = Ticket.objects.filter(student_id=user[0].student_id,unique_id=self.input['ticket'])
+        if not ticketlist:
+            errormsg = user[0].student_id+' '+self.input['ticket']
+            raise LogicError(errormsg)
+        ticket = ticketlist[0]
         activity = ticket.activity
         detail = {
             'activityName': activity.name,
