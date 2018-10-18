@@ -47,7 +47,8 @@ class WeChatHandler(object):
         return self.create_ticket(act_id)
 
 
-    def create_ticket(self,act_id)
+    def create_ticket(self,act_id):
+        return True #whatever, i just want to test other part
 
 
     def check(self):
@@ -96,6 +97,12 @@ class WeChatHandler(object):
     def get_activities(self):
         activities = Activity.objects.filter(status = Activity.STATUS_PUBLISHED)
         return activities
+
+    def get_ticket_by_act(self,act_id):
+        ticket = Ticket.objects.filter(student_id = self.user.student_id, activity= act_id)
+        if ticket:
+            return ticket[0]
+        return ticket
 
     def get_tickets(self):
         tickets = Ticket.objects.filter(student_id = self.user.student_id)
