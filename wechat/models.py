@@ -5,7 +5,8 @@ from codex.baseerror import LogicError
 
 class User(models.Model):
     open_id = models.CharField(max_length=64, unique=True, db_index=True)
-    student_id = models.CharField(max_length=32, unique=True, db_index=True)
+    student_id = models.CharField(max_length=32, db_index=True)
+    # Cancel unique to fix bug when two default student with student_id=''
 
     @classmethod
     def get_by_openid(cls, openid):
@@ -33,13 +34,28 @@ class Activity(models.Model):
     STATUS_SAVED = 0
     STATUS_PUBLISHED = 1
 
+    @classmethod
+    def get_by_id(cls, id):
+        try:
+            return cls.objects.filter(status=cls.STATUS_PUBLISHED).get(id=id)
+        except cls.DoesNotExist:
+            raise LogicError('Activity not found')
+
 
 class Ticket(models.Model):
     student_id = models.CharField(max_length=32, db_index=True)
-    unique_id = models.CharField(max_length=64, db_index=True, unique=True)
-    activity = models.ForeignKey(Activity)
+    unique_id = models.CharField(max_length=64, unique=True)
+    # activity = models.ForeignKey(Activity)
+    activity_id = models.IntegerField()
     status = models.IntegerField()
 
     STATUS_CANCELLED = 0
     STATUS_VALID = 1
     STATUS_USED = 2
+
+    @classmethod
+    def get_student_ticket(cls, openid, ticket):
+        try:
+            return cls.objects.filter(student_id=User.get_by_openid(openid).student_id).get(unique_id=ticket)
+        except cls.DoesNotExist:
+            raise LogicError('Ticket owned by the owner not found')

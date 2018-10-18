@@ -38,7 +38,7 @@ WECHAT_TOKEN = CONFIGS['WECHAT_TOKEN']
 WECHAT_APPID = CONFIGS['WECHAT_APPID']
 WECHAT_SECRET = CONFIGS['WECHAT_SECRET']
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['635149.iterator-traits.com', 'ticket.wecode-onlinejudge.xyz', '140.143.13.231', '159.65.105.211']
 
 
 # Application definition
@@ -48,8 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     # 'django.contrib.messages',
-    # 'django.contrib.staticfiles',
-    'django.contrib.admin',
+    'django.contrib.staticfiles',
+    # 'django.contrib.admin',
 
     'wechat',
     'adminpage',
@@ -146,14 +146,17 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+TIME_ZONE = 'Asia/Shanghai'
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
-STATIC_URL = '/'
+STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+IMAGE_ROOT = os.path.join(STATIC_ROOT, 'img')
 
 
 # Site and URL

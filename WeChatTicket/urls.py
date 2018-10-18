@@ -14,7 +14,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url, include
-from django.contrib import admin
 
 from wechat.views import CustomWeChatView
 from WeChatTicket.views import StaticFileView
@@ -22,7 +21,6 @@ from WeChatTicket.views import StaticFileView
 
 urlpatterns = [
     url(r'^wechat/?$', CustomWeChatView.as_view()),
-    url(r'^admin/', admin.site.urls),
     url(r'^api/u/', include('userpage.urls')),
     url(r'^api/a/', include('adminpage.urls')),
     url(r'^', StaticFileView.as_view()),

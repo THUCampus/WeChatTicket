@@ -33,3 +33,21 @@ class ValidateError(BaseError):
 
     def __init__(self, msg):
         super(ValidateError, self).__init__(3, msg)
+
+
+class AuthError(BaseError):
+    def __init__(self, msg):
+        super(AuthError, self).__init__(4, msg)
+
+
+class DatabaseError(BaseError):
+    def __init__(self, msg):
+        super(DatabaseError, self).__init__(5, msg)
+
+class FileError(BaseError):
+    def __init__(self, msg):
+        super(FileError, self).__init__(6, msg)
+
+class MenuError(BaseError):
+    def __init__(self, msg):
+        super(MenuError, self).__init__(7, msg)
