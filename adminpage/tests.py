@@ -174,6 +174,7 @@ class act_details_Test(TestCase):
 class act_Menu_Test(TestCase):
     #初始化
     def setUp(self):
+        Activity.objects.all().delete()
         Activity.objects.create(id=1, name='act_deleted', key='key', place='place',
                                 description='description', start_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), pic_url="url",
                                 end_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)), book_start=timezone.now(), book_end=timezone.make_aware(datetime.datetime(2018, 10, 27, 18, 0, 0, 0)),
