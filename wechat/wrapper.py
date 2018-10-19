@@ -10,6 +10,7 @@ from WeChatTicket.settings import WECHAT_TOKEN, WECHAT_APPID, WECHAT_SECRET
 
 from django.http import Http404, HttpResponse
 from django.template.loader import get_template
+from django.db import transaction
 
 from WeChatTicket import settings
 from codex.baseview import BaseView
@@ -32,6 +33,23 @@ class WeChatHandler(object):
         self.input = msg
         self.user = user
         self.view = view
+
+    def book_ticket(self,act_id):
+        acts = Activity.objects.select_for_update().filter(id=int(act_id))
+        with transaction.atomic():
+            act = acts[0]      
+            if act.remain_tickets > 0:
+                act.remain_tickets -= 1
+                act.save()
+            else:
+                return ''
+        #not return: there's tickets left!
+        return self.create_ticket(act_id)
+
+
+    def create_ticket(self,act_id):
+        return True #whatever, i just want to test other part
+
 
     def check(self):
         raise NotImplementedError('You should implement check() in sub-class of WeChatHandler')
@@ -79,6 +97,12 @@ class WeChatHandler(object):
     def get_activities(self):
         activities = Activity.objects.filter(status = Activity.STATUS_PUBLISHED)
         return activities
+
+    def get_ticket_by_act(self,act_id):
+        ticket = Ticket.objects.filter(student_id = self.user.student_id, activity= act_id)
+        if ticket:
+            return ticket[0]
+        return ticket
 
     def get_tickets(self):
         tickets = Ticket.objects.filter(student_id = self.user.student_id)
