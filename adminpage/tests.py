@@ -1,41 +1,41 @@
 from django.test import TestCase, Client
 from django.utils import timezone
 from django.contrib.auth.models import User
-from adminpage.views import *
-from codex.baseerror import *
+from adminpage.views import adminLogin, adminLogout, activityCheckin, activityCreate, activityDelete, activityDetail, activityList, activityMenu
+from codex.baseerror import ValidateError
 import json
-from wechat.models import *
 import datetime
+from wechat.models import Activity, Ticket
 
 # Create your tests here.
 
 #登录
 class adminLoginTest(TestCase):
     #初始化
-    def ini(self):
+    def setUp(self):
         User.objects.create_superuser('superuser', 'superuser@test.com', '123456test')
         User.objects.create_user('user', 'user@test.com', '123456test')
 
     #路由测试
-    def urlTest(self):
+    def test_login_url(self):
         c = Client()
         response = c.post('/api/a/login', {"username": "superuser", "password": "123456test"})
         self.assertEqual(response.status_code, 200)
     
     #superuser登录测试
-    def superuserTest(self):
+    def test_superuser(self):
         c = Client()
         response = c.post('/api/a/login', {"username": "superuser", "password": "123456test"})
         self.assertEqual(json.loads(response.content.decode())['code'], 0)
 
     #user登录测试
-    def userTest(self):
+    def test_user(self):
         c = Client()
         response = c.post('/api/a/login', {"username": "user", "password": "123456test"})
         self.assertEqual(json.loads(response.content.decode())['code'], 0)
 
     #密码错误测试
-    def pwd_errorTest(self):
+    def test_pwd_error(self):
         a_login = adminLogin()
         a_login.input = {
             'username':'superuser',
@@ -44,7 +44,7 @@ class adminLoginTest(TestCase):
         self.assertRaises(ValidateError, a_login.post)
 
     #用户名无效测试
-    def username_not_exitTest(self):
+    def test_username_not_exit(self):
         a_login = adminLogin()
         a_login.input = {
             'username':'null_user',
@@ -52,21 +52,19 @@ class adminLoginTest(TestCase):
         }
         self.assertRaises(ValidateError, a_login.post)
 
-
-# #登出
-# class adminLogoutTest(TestCase):
-#     #登出测试
-#     def logoutTest(self):
-#         c = Client()
-#         response = c.post('/api/a/logout', {})
-#         self.assertEqual(response.status_code, 200)
-#         self.assertEqual(json.loads(response.content.decode())['code'], 0)
-
+#登出
+class adminLogoutTest(TestCase):
+    #登出测试
+    def logoutTest(self):
+        c = Client()
+        response = c.post('/api/a/logout', {})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content.decode())['code'], 0)
 
 #活动列表
 class activityListTest(TestCase):
     #初始化
-    def ini(self):
+    def setUp(self):
         Activity.objects.create(id=1, name='act_deleted', key='key', place='place',
                                 description='description', start_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), pic_url="url",
                                 end_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)), book_start=timezone.now(), book_end=timezone.make_aware(datetime.datetime(2018, 10, 27, 18, 0, 0, 0)),
@@ -81,20 +79,19 @@ class activityListTest(TestCase):
                                 total_tickets=1000, status=Activity.STATUS_PUBLISHED, remain_tickets=1000)
     
     #get测试
-    def get_act_List(self):
+    def test_get_act_List(self):
         A = activityList()
         get = A.get()
         self.assertEqual(len(get), 2)
     
     #回退
-    def clear(self):
+    def tearDown(self):
         Activity.objects.all().delete()
-
 
 #创建活动
 class create_act_Test(TestCase):
     #post测试
-    def create_act(self):
+    def test_create_act(self):
         act = {"name": "name", "key": "key", "place": "place", "description": "description", "picUrl": "picUrl",
                      "startTime": timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), 
                      "endTime": timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)),
@@ -112,7 +109,7 @@ class create_act_Test(TestCase):
 #删除活动
 class delete_act_Test(TestCase):
     #初始化
-    def ini(self):
+    def setUp(self):
         Activity.objects.create(id=1, name='act_deleted', key='key', place='place',
                                 description='description', start_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), pic_url="url",
                                 end_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)), book_start=timezone.now(), book_end=timezone.make_aware(datetime.datetime(2018, 10, 27, 18, 0, 0, 0)),
@@ -127,57 +124,56 @@ class delete_act_Test(TestCase):
                                 total_tickets=1000, status=Activity.STATUS_PUBLISHED, remain_tickets=1000)
 
     #post测试
-
     #删除存在的活动
-    def delete_act_exited(self):
+    def test_delete_act_exited(self):
         A_delete = activityDelete()
         A_delete.input = {'id': 2}
         A_delete.post()
         self.assertEqual(Activity.objects.get(id=2).status, Activity.STATUS_DELETED)
     #删除已删除的活动
-    def delete_act_deleted(self):
+    def test_delete_act_deleted(self):
         A_delete = activityDelete()
         A_delete.input = {'id': 1}    
         self.assertRaises(ValidateError, A_delete.post)
     #删除不存在的活动
-    def delete_act_not_exited(self):
+    def test_delete_act_not_exited(self):
         A_delete = activityDelete()
         A_delete.input = {'id': 4}    
         self.assertRaises(ValidateError, A_delete.post)
     
     #回退
-    def clear(self):
+    def tearDown(self):
         Activity.objects.all().delete()
 
 #活动详情
 class act_details_Test(TestCase):
     #初始化
-    def ini(self):
+    def setUp(self):
         Activity.objects.create(id=1, name='act_saved', key='key', place='place',
                                 description='description', start_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), pic_url="url",
                                 end_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)), book_start=timezone.now(), book_end=timezone.make_aware(datetime.datetime(2018, 10, 27, 18, 0, 0, 0)),
                                 total_tickets=1000, status=Activity.STATUS_SAVED, remain_tickets=1000)
     
     #获取存在的活动
-    def get_details_act_exited(self):
+    def test_get_details_act_exited(self):
         act_detail = activityDetail()
         act_detail.input = {'id': 1}
         self.assertEqual(act_detail.get()['name'], "act_saved")
 
     #获取不存在的活动
-    def get_details_act_not_exited(self):
+    def test_get_details_act_not_exited(self):
         act_detail = activityDetail()
         act_detail.input = {'id': 2}
         self.assertRaises(ValidateError, act_detail.get)
 
     #回退
-    def clear(self):
+    def tearDown(self):
         Activity.objects.all().delete()
 
 #微信菜单调整
 class act_Menu_Test(TestCase):
     #初始化
-    def ini(self):
+    def setUp(self):
         Activity.objects.create(id=1, name='act_deleted', key='key', place='place',
                                 description='description', start_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), pic_url="url",
                                 end_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)), book_start=timezone.now(), book_end=timezone.make_aware(datetime.datetime(2018, 10, 27, 18, 0, 0, 0)),
@@ -192,26 +188,26 @@ class act_Menu_Test(TestCase):
                                 total_tickets=1000, status=Activity.STATUS_PUBLISHED, remain_tickets=1000)
 
     #获取菜单测试
-    def get_menu_test(self):
+    def test_get_menu_test(self):
         menu = activityMenu()
         act_list = menu.get()
         self.assertEqual(len(act_list), 1)
         self.assertEqual(act_list[0]['name'], 'act_published')
 
     #修改菜单测试
-    def post_menu_test(self):
+    def test_post_menu_test(self):
         menu = activityMenu()
         menu.input = {'id':2}
         self.assertRaises(ValidateError, menu.post)
     
     #回退
-    def clear(self):
+    def tearDown(self):
         Activity.objects.all().delete()
 
 #检票
 class activity_checkin_Test(TestCase):
     #初始化
-    def ini(self):
+    def setUp(self):
         act = Activity.objects.create(id=1, name='act_published', key='key', place='place',
                                 description='description', start_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 8, 0, 0, 0)), pic_url="url",
                                 end_time=timezone.make_aware(datetime.datetime(2018, 10, 28, 18, 0, 0, 0)), book_start=timezone.now(), book_end=timezone.make_aware(datetime.datetime(2018, 10, 27, 18, 0, 0, 0)),
@@ -221,26 +217,41 @@ class activity_checkin_Test(TestCase):
         Ticket.objects.create(student_id = '3', unique_id='3', activity= act, status=Ticket.STATUS_VALID)
 
     #正常检票
-    def checkin_vaild1(self):
+    def test_checkin_vaild1(self):
         C = activityCheckin()
-        C.input = {'actId':1, 'student_id':3}
+        C.input = {'actId':1, 'studentId':'3'}
         info = C.post()
-        self.assertEqual(info['ticket'], 3)
+        self.assertEqual(info['ticket'], '3')
 
-    #正常检票
-    def checkin_vaild2(self):
+    def test_checkin_vaild2(self):
         C = activityCheckin()
-        C.input = {'actId':1, 'unique_id':2}
+        C.input = {'actId':1, 'ticket':'3'}
         info = C.post()
-        self.assertEqual(info['studentId'], 2)
+        self.assertEqual(info['ticket'], '3')
 
-    #非正常检票
-    def checkin_invaild(self):
+    #已用票检票
+    def test_checkin_used1(self):
         C = activityCheckin()
-        C.input = {'actId':1, 'unique_id':1}
+        C.input = {'actId':1, 'studentId':'2'}
+        self.assertRaises(ValidateError, C.post)
+
+    def test_checkin_used2(self):
+        C = activityCheckin()
+        C.input = {'actId':1, 'ticket':'2'}
+        self.assertRaises(ValidateError, C.post)
+
+    #退票检票
+    def test_checkin_invaild1(self):
+        C = activityCheckin()
+        C.input = {'actId':1, 'studentId':'1'}
+        self.assertRaises(ValidateError, C.post)
+
+    def test_checkin_invaild2(self):
+        C = activityCheckin()
+        C.input = {'actId':1, 'ticket':'1'}
         self.assertRaises(ValidateError, C.post)
 
     #回退
-    def clear(self):
+    def tearDown(self):
         Ticket.objects.all().delete()
         Activity.objects.all().delete()
