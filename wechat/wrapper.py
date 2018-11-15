@@ -75,7 +75,9 @@ class WeChatHandler(object):
         return self.is_msg_type('text') and (self.input['Content'].lower() in texts)
 
     def is_event_click(self, *event_keys):
-        return self.is_msg_type('event') and (self.input['Event'] == 'CLICK') and (self.input['EventKey'] in event_keys)
+        return self.is_msg_type('event') and (self.input['Event'] == 'CLICK') and\
+               ((self.input['EventKey'] in event_keys) or (self.input['EventKey'].startswith('BOOKING_ACTIVITY_') and
+                'BOOKING_ACTIVITY_' in event_keys))
 
     def is_event(self, *events):
         return self.is_msg_type('event') and (self.input['Event'] in events)
@@ -88,6 +90,12 @@ class WeChatHandler(object):
 
     def url_bind(self):
         return settings.get_url('u/bind', {'openid': self.user.open_id})
+
+    def url_activity_detail(self, activity_id):
+        return settings.get_url('u/activity', {'id': activity_id})
+
+    def url_ticket_detail(self, open_id, unique_id):
+        return settings.get_url('u/ticket', {'ticket': unique_id, 'openid': open_id})
 
 
 class WeChatEmptyHandler(WeChatHandler):
@@ -114,7 +122,7 @@ class WeChatLib(object):
 
     logger = logging.getLogger('wechatlib')
     access_token = ''
-    access_token_expire = datetime.datetime.fromtimestamp(0)
+    access_token_expire = datetime.datetime.fromtimestamp(1429417200.0)
     token = WECHAT_TOKEN
     appid = WECHAT_APPID
     secret = WECHAT_SECRET
