@@ -33,6 +33,13 @@ class Activity(models.Model):
     STATUS_SAVED = 0
     STATUS_PUBLISHED = 1
 
+    @classmethod
+    def get_by_id(cls, activity_id):
+        try:
+            return cls.objects.get(id=activity_id)
+        except cls.DoesNotExist:
+            raise LogicError('Activity not found')
+
 
 class Ticket(models.Model):
     student_id = models.CharField(max_length=32, db_index=True)
@@ -43,3 +50,11 @@ class Ticket(models.Model):
     STATUS_CANCELLED = 0
     STATUS_VALID = 1
     STATUS_USED = 2
+
+    @classmethod
+    def get_by_uniqueid(cls, uniqueid):
+        try:
+            return cls.objects.get(unique_id=uniqueid)
+        except cls.DoesNotExist:
+            raise LogicError('Ticket not found')
+
