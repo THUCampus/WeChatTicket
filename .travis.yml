@@ -1,0 +1,19 @@
+sudo: required
+language: python
+python: '3.6'
+branches:
+  only:
+  - master
+env: "-DJANGO=1.9"
+services:
+- mysql
+before_install:
+- openssl aes-256-cbc -K $encrypted_0fbea918c27f_key -iv $encrypted_0fbea918c27f_iv
+  -in configs.json.enc -out configs.json -d
+- mysql -e 'create database wechat_ticket_db;'
+install:
+- pip install -r requirements.txt
+script:
+- python manage.py makemigrations
+- python manage.py migrate
+- python manage.py test
