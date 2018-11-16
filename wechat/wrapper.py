@@ -5,15 +5,16 @@ import hashlib
 import json
 import logging
 import urllib.request
+import uuid
 import xml.etree.ElementTree as ET
 from WeChatTicket.settings import WECHAT_TOKEN, WECHAT_APPID, WECHAT_SECRET
 
 from django.http import Http404, HttpResponse
 from django.template.loader import get_template
-
+from django.db import transaction
 from WeChatTicket import settings
 from codex.baseview import BaseView
-from wechat.models import User
+from wechat.models import User,Activity,Ticket
 
 
 __author__ = "Epsirom"
@@ -32,6 +33,35 @@ class WeChatHandler(object):
         self.input = msg
         self.user = user
         self.view = view
+
+    def book_ticket(self,act_id):
+        acts = Activity.objects.select_for_update().filter(id=int(act_id))
+        with transaction.atomic():
+            act = acts[0]      
+            if act.remain_tickets > 0:
+                act.remain_tickets -= 1
+                act.save()
+            else:
+                return ''
+        #not return: there's tickets left!
+        return self.create_ticket(act_id)
+
+    def create_ticket(self,id):
+        currentTime = datetime.datetime.now().timestamp()
+        unique_id = uuid.uuid5(uuid.NAMESPACE_DNS,self.user.student_id + id + str(currentTime))
+        activity = Activity.objects.get(id = int(id))
+        Ticket.objects.create(student_id = self.user.student_id, unique_id = unique_id,
+        activity = activity, status = Ticket.STATUS_VALID)
+        return self.url_ticket(unique_id)
+
+    def get_ticket_by_act(self,id):
+        activity = self.get_activity(id)
+        ticket = Ticket.objects.filter(student_id = self.user.student_id, activity = activity,status = Ticket.STATUS_VALID)
+        if ticket:
+            return True
+        else:
+            return False
+
 
     def check(self):
         raise NotImplementedError('You should implement check() in sub-class of WeChatHandler')
@@ -52,10 +82,10 @@ class WeChatHandler(object):
         ))
 
     def reply_news(self, articles):
-        if len(articles) > 10:
-            self.logger.warn('Reply with %d articles, keep only 10', len(articles))
+        if len(articles) > 8:
+            self.logger.warn('Reply with %d articles, keep only 8', len(articles))
         return get_template('news.xml').render(self.get_context(
-            Articles=articles[:10]
+            Articles=articles[:8]
         ))
 
     def reply_single_news(self, article):
@@ -67,12 +97,37 @@ class WeChatHandler(object):
         return get_template('messages/' + name + '.html').render(dict(
             handler=self, user=self.user, **data
         ))
+        #self.logger.warn(repr(result))
+        #return result
+
+    def get_activity(self,id):
+        activity = Activity.objects.filter(id=int(id))
+        if not activity:
+            return activity
+        return activity[0]
+
+    def get_activities(self):
+        activities = Activity.objects.filter(status = Activity.STATUS_PUBLISHED)
+        return activities
+
+    def get_tickets(self):
+        ticket_list = []
+        tickets = Ticket.objects.filter(student_id = self.user.student_id,status = Ticket.STATUS_VALID)
+        for i in tickets:
+            ticket_list.append(i)
+        tickets = Ticket.objects.filter(student_id = self.user.student_id,status = Ticket.STATUS_USED)
+        for i in tickets:
+            ticket_list.append(i)
+        tickets = Ticket.objects.filter(student_id = self.user.student_id,status = Ticket.STATUS_CANCELLED)
+        for i in tickets:
+            ticket_list.append(i)    
+        return ticket_list
 
     def is_msg_type(self, check_type):
         return self.input['MsgType'] == check_type
 
     def is_text(self, *texts):
-        return self.is_msg_type('text') and (self.input['Content'].lower() in texts)
+        return self.is_msg_type('text') and (self.input['Content'].split()[0] in texts)
 
     def is_event_click(self, *event_keys):
         return self.is_msg_type('event') and (self.input['Event'] == 'CLICK') and (self.input['EventKey'] in event_keys)
@@ -88,6 +143,12 @@ class WeChatHandler(object):
 
     def url_bind(self):
         return settings.get_url('u/bind', {'openid': self.user.open_id})
+    
+    def url_book(self,id):
+        return settings.get_url('u/activity',{'id': id})
+
+    def url_ticket(self,ticket):
+        return  settings.get_url('u/ticket',{'openid': self.user.open_id,'ticket':ticket})
 
 
 class WeChatEmptyHandler(WeChatHandler):
@@ -114,7 +175,7 @@ class WeChatLib(object):
 
     logger = logging.getLogger('wechatlib')
     access_token = ''
-    access_token_expire = datetime.datetime.fromtimestamp(0)
+    access_token_expire = datetime.datetime.fromtimestamp(123456789)
     token = WECHAT_TOKEN
     appid = WECHAT_APPID
     secret = WECHAT_SECRET
