@@ -38,7 +38,10 @@ WECHAT_TOKEN = CONFIGS['WECHAT_TOKEN']
 WECHAT_APPID = CONFIGS['WECHAT_APPID']
 WECHAT_SECRET = CONFIGS['WECHAT_SECRET']
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'd4a939f0.ngrok.io',
+    'localhost'
+]
 
 
 # Application definition
